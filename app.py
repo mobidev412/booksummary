@@ -892,8 +892,8 @@ def create_checkout_session():
         session = stripe.checkout.Session.create(
             line_items=[{"price": price_id, "quantity": 1}],
             mode=checkout_mode,
-            success_url="https://yourdomain.com/success",
-            cancel_url="https://yourdomain.com/pricing",
+            success_url="https://booksummary-phi.vercel.app/success",
+            cancel_url="https://booksummary-phi.vercel.app/pricing",
         )
         return jsonify({"url": session.url})
     except Exception as e:
