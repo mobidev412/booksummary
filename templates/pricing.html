@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-wrap" style="max-width:860px;">
+
+    <!-- Header -->
+    <div style="text-align:center; margin-bottom:3rem;" class="fade-up">
+        <p style="font-size:0.72rem; font-family:var(--font-mono); letter-spacing:0.12em;
+              text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">
+            ☕ Simple Pricing
+        </p>
+        <h2 style="font-family:var(--font-display); font-size:2.2rem; font-style:italic;
+               font-weight:700; color:var(--latte); letter-spacing:-0.02em; margin-bottom:10px;">
+            Read Smarter, Your Way
+        </h2>
+        <p style="color:var(--text-muted); font-size:0.9rem; max-width:400px; margin:0 auto;">
+            Choose the plan that fits your reading habit. Upgrade or cancel anytime.
+        </p>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; align-items:start;" class="fade-up-2">
+
+        <!-- ── Free Plan ── -->
+        <div class="card" style="padding:0; overflow:hidden; border-color:rgba(180,160,140,0.2);">
+            <div style="padding:1.5rem 1.5rem 1rem; border-bottom:1px solid rgba(180,160,140,0.12);">
+                <div style="font-size:1.6rem; margin-bottom:0.75rem;">📖</div>
+                <div style="font-size:0.68rem; font-family:var(--font-mono); letter-spacing:0.1em;
+                    text-transform:uppercase; color:var(--text-muted); margin-bottom:6px;">
+                    Free
+                </div>
+                <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:6px;">
+                    <span style="font-family:var(--font-display); font-size:2.2rem; font-weight:700;
+                       color:var(--text-primary); font-style:italic;">$0</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">/ forever</span>
+                </div>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">
+                    Try it out, no card needed
+                </p>
+            </div>
+            <div style="padding:1.25rem 1.5rem;">
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">1 book summary</span>
+                </div>
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">Key point deep-dives</span>
+                </div>
+                <div class="learn-item" style="margin-bottom:10px; opacity:0.35;">
+                    <div style="width:14px; height:14px; border-radius:50%; border:1.5px solid var(--text-muted);
+                      flex-shrink:0; margin-top:2px;"></div>
+                    <span style="font-size:0.85rem; color:var(--text-muted); text-decoration:line-through;">
+                        Unlimited summaries
+                    </span>
+                </div>
+                <div class="learn-item" style="opacity:0.35;">
+                    <div style="width:14px; height:14px; border-radius:50%; border:1.5px solid var(--text-muted);
+                      flex-shrink:0; margin-top:2px;"></div>
+                    <span style="font-size:0.85rem; color:var(--text-muted); text-decoration:line-through;">
+                        Reading history
+                    </span>
+                </div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                {% if session.user_id and not session.get('is_premium') %}
+                <button class="btn btn-secondary btn-full" disabled style="cursor:default; opacity:0.6;">
+                    Current Plan
+                </button>
+                {% else %}
+                <a href="{{ url_for('register') }}" class="btn btn-secondary btn-full">
+                    Get Started Free
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Monthly Plan ── (highlighted) -->
+        <div class="card" style="padding:0; overflow:hidden;
+         border-color:rgba(192,125,58,0.4);
+         box-shadow:0 8px 36px rgba(192,125,58,0.14);
+         transform:translateY(-6px);
+         position:relative;">
+
+            <!-- Popular badge -->
+            <div style="position:absolute; top:-1px; left:50%; transform:translateX(-50%);
+                  background:linear-gradient(135deg,var(--caramel),#8a4e18);
+                  color:#fff; font-size:0.62rem; font-family:var(--font-mono);
+                  letter-spacing:0.1em; text-transform:uppercase;
+                  padding:4px 14px; border-radius:0 0 10px 10px;
+                  font-weight:700; white-space:nowrap;">
+                ✦ Most Popular
+            </div>
+
+            <div style="padding:2rem 1.5rem 1rem; border-bottom:1px solid rgba(192,125,58,0.15);
+                  background:linear-gradient(160deg, rgba(192,125,58,0.06), transparent);">
+                <div style="font-size:1.6rem; margin-bottom:0.75rem;">☕</div>
+                <div style="font-size:0.68rem; font-family:var(--font-mono); letter-spacing:0.1em;
+                    text-transform:uppercase; color:var(--caramel); margin-bottom:6px;">
+                    Monthly
+                </div>
+                <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:6px;">
+                    <span style="font-family:var(--font-display); font-size:2.2rem; font-weight:700;
+                       color:var(--latte); font-style:italic;">$20</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">/ month</span>
+                </div>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">
+                    Billed monthly, cancel anytime
+                </p>
+            </div>
+            <div style="padding:1.25rem 1.5rem;">
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">
+                        <strong style="color:var(--honey);">Unlimited</strong> book summaries
+                    </span>
+                </div>
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">Key point deep-dives</span>
+                </div>
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">Full reading history</span>
+                </div>
+                <div class="learn-item">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">All languages & tones</span>
+                </div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                {% if session.get('is_premium') %}
+                <button class="btn btn-primary btn-full" disabled style="cursor:default; opacity:0.6;">
+                    Already Premium ✓
+                </button>
+                {% else %}
+                <button class="btn btn-primary btn-full checkout-btn" data-plan="monthly"
+                    data-email="{{ session.user_email or '' }}">
+                    Upgrade Monthly →
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ── Yearly Plan ── -->
+        <div class="card" style="padding:0; overflow:hidden;
+         border-color:rgba(58,138,114,0.3);
+         box-shadow:0 4px 20px rgba(58,138,114,0.08);
+         position:relative;">
+
+            <!-- Save badge -->
+            <div style="position:absolute; top:14px; right:14px;">
+                <span class="badge badge-rain" style="font-size:0.65rem;">Save 17%</span>
+            </div>
+
+            <div style="padding:1.5rem 1.5rem 1rem; border-bottom:1px solid rgba(58,138,114,0.12);
+                  background:linear-gradient(160deg, rgba(58,138,114,0.05), transparent);">
+                <div style="font-size:1.6rem; margin-bottom:0.75rem;">📚</div>
+                <div style="font-size:0.68rem; font-family:var(--font-mono); letter-spacing:0.1em;
+                    text-transform:uppercase; color:var(--rain); margin-bottom:6px;">
+                    Yearly
+                </div>
+                <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:3px;">
+                    <span style="font-family:var(--font-display); font-size:2.2rem; font-weight:700;
+                       color:var(--text-primary); font-style:italic;">$200</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">/ year</span>
+                </div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin:0 0 4px;">
+                    ~$16.67 / month · billed annually
+                </p>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin:0;">
+                    Best value for avid readers
+                </p>
+            </div>
+            <div style="padding:1.25rem 1.5rem;">
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">
+                        <strong style="color:var(--rain);">Unlimited</strong> book summaries
+                    </span>
+                </div>
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">Key point deep-dives</span>
+                </div>
+                <div class="learn-item" style="margin-bottom:10px;">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">Full reading history</span>
+                </div>
+                <div class="learn-item">
+                    <div class="learn-check"></div>
+                    <span style="font-size:0.85rem; color:var(--text-secondary);">Priority support</span>
+                </div>
+            </div>
+            <div style="padding:0 1.5rem 1.5rem;">
+                {% if session.get('is_premium') %}
+                <button class="btn btn-rain btn-full" disabled style="cursor:default; opacity:0.6;">
+                    Already Premium ✓
+                </button>
+                {% else %}
+                <button class="btn btn-rain btn-full checkout-btn" data-plan="yearly"
+                    data-email="{{ session.user_email or '' }}">
+                    Upgrade Yearly →
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Trust line -->
+    <div style="text-align:center; margin-top:2.5rem;" class="fade-up-3">
+        <p style="font-size:0.78rem; color:var(--text-muted);">
+            🔒 Secure payment via Stripe &nbsp;·&nbsp; Cancel anytime &nbsp;·&nbsp; No hidden fees
+        </p>
+    </div>
+
+</div>
+
+<!-- Loading overlay reused from books.html -->
+<div id="loader" class="loader-overlay hidden">
+    <div class="spinner"></div>
+    <div class="loader-title">Redirecting to checkout…</div>
+    <div class="loader-sub">You'll be back in seconds ✓</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll(".checkout-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const plan = this.dataset.plan;
+            const email = this.dataset.email;
+
+            if (!email) {
+                // Not logged in — send to login
+                window.location.href = "{{ url_for('login') }}";
+                return;
+            }
+
+            document.getElementById("loader").classList.remove("hidden");
+
+            fetch("/create-checkout-session", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, plan: plan })
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        document.getElementById("loader").classList.add("hidden");
+                        alert(data.error || "Something went wrong. Please try again.");
+                    }
+                })
+                .catch(function () {
+                    document.getElementById("loader").classList.add("hidden");
+                    alert("Network error. Please try again.");
+                });
+        });
+    });
+</script>
+{% endblock %}

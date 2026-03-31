@@ -5,7 +5,7 @@ import os
 print(f"✅ POSTHOG_API_KEY loaded: {os.environ.get('POSTHOG_API_KEY', 'NOT FOUND')[:20]}...")
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
-from user import register_user, login_user, get_user_by_email, get_user_by_id
+from user import register_user, login_user, get_user_by_email, get_user_by_id, set_user_premium_by_email
 from secrets import token_urlsafe
 from datetime import datetime, timedelta
 
@@ -43,6 +43,9 @@ from analytics import (
     end_timer,
 )
 
+import stripe
+stripe.api_key = os.environ.get("SECRET_KEY_stripe")
+
 print("POSTHOG KEY:", os.environ.get("POSTHOG_API_KEY", "NOT FOUND"))
 
 app = Flask(__name__)
@@ -76,6 +79,9 @@ def google_auth():
 
     session["user_id"]   = result["user_id"]
     session["user_name"] = result["full_name"]
+    session["user_email"] = email
+    session["is_premium"] = result.get("is_premium", False)
+    
 
     if result.get("is_new"):
         track_signup(result["user_id"], result["full_name"], email)
@@ -152,10 +158,13 @@ def register():
 
         session["user_id"]   = user_id
         session["user_name"] = name
+        session["user_email"] = email
+        session["is_premium"] = False  
 
         track_signup(user_id, name, email)
 
-        return redirect(url_for("onboarding"))
+        # Redirect to pricing after registration
+        return redirect(url_for("pricing"))
     
     return render_template("register.html")
 
@@ -177,8 +186,14 @@ def login():
 
         session["user_id"]   = user["id"]
         session["user_name"] = user["full_name"]
+        session["user_email"] = user["email"]
+        session["is_premium"] = user.get("is_premium", False)
 
         track_login(user["id"], email)
+
+        # Redirect to pricing if not premium
+        if not session.get("is_premium"):
+            return redirect(url_for("pricing"))
 
         prefs = get_preferences(user["id"])
         if not prefs:
@@ -341,7 +356,9 @@ def onboarding():
             genres[0], genres[1] if len(genres) > 1 else genres[0],
             reading_time, language
         )
-
+        # Redirect to pricing if not premium
+        if not session.get("is_premium"):
+            return redirect(url_for("pricing"))
         return redirect(url_for("books"))
 
     prefs = get_preferences(session["user_id"])
@@ -362,6 +379,9 @@ def onboarding():
 def books():
     if "user_id" not in session:
         return redirect(url_for("login"))
+    # Redirect to pricing if not premium
+    if not session.get("is_premium"):
+        return redirect(url_for("pricing"))
 
     prefs = get_preferences(session["user_id"])
     suggestions = {"genre_1": [], "genre_2": []}
@@ -417,12 +437,68 @@ def books():
     return render_template("books.html", prefs=prefs, suggestions=suggestions, search_results=search_results, query=query)
 
 
+# @app.route("/select-book", methods=["POST"])
+# def select_book():
+#     if "user_id" not in session:
+#         return redirect(url_for("login"))
+
+#     # Try to get all book data from form (search result selection)
+#     title          = request.form.get("title", "").strip()
+#     author         = request.form.get("author", "").strip()
+#     description    = request.form.get("description", "").strip()
+#     genre          = request.form.get("genre", "").strip()
+#     published_year = request.form.get("published_year", "").strip()
+#     cover_image    = request.form.get("cover_image", "").strip()
+
+#     if not title:
+#         flash("No book selected.", "error")
+#         return redirect(url_for("books"))
+
+#     prefs        = get_preferences(session["user_id"])
+#     reading_time = prefs.get("reading_time", 10) if prefs else 10
+
+#     # If description or genre is missing, fallback to search_book
+#     if description or genre or cover_image:
+#         book_data = {
+#             "title": title,
+#             "author": author,
+#             "description": description,
+#             "genre": genre,
+#             "published_year": published_year,
+#             "cover_image": cover_image,
+#         }
+#     else:
+#         book_data = search_book(f"{title} {author}")
+#         if not book_data:
+#             book_data = {"title": title, "author": author}
+
+#     session["book_data"] = book_data
+#     track_book_selected(session["user_id"], title, author)
+#     book_id = save_book(session["book_data"])
+#     return redirect(url_for("summary", book_id=book_id, reading_time=reading_time))
+
+
 @app.route("/select-book", methods=["POST"])
 def select_book():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # Try to get all book data from form (search result selection)
+    # ── GATE: Free plan limit ──────────────────────────────────────
+    if not session.get("is_premium"):
+        conn = get_connection()
+        cursor = get_cursor(conn)
+        cursor.execute(
+            "SELECT COUNT(*) FROM summaries WHERE user_id = %s",
+            (session["user_id"],)
+        )
+        count = cursor.fetchone()[0]
+        conn.close()
+
+        if count >= 1:
+            flash("You've used your free summary. Upgrade to generate unlimited summaries.", "error")
+            return redirect(url_for("pricing"))
+    # ──────────────────────────────────────────────────────────────
+
     title          = request.form.get("title", "").strip()
     author         = request.form.get("author", "").strip()
     description    = request.form.get("description", "").strip()
@@ -437,7 +513,6 @@ def select_book():
     prefs        = get_preferences(session["user_id"])
     reading_time = prefs.get("reading_time", 10) if prefs else 10
 
-    # If description or genre is missing, fallback to search_book
     if description or genre or cover_image:
         book_data = {
             "title": title,
@@ -455,7 +530,13 @@ def select_book():
     session["book_data"] = book_data
     track_book_selected(session["user_id"], title, author)
     book_id = save_book(session["book_data"])
+    # Increment summary count for free users
+    if not session.get("is_premium"):
+        from user import increment_summary_count
+        increment_summary_count(session["user_id"])
     return redirect(url_for("summary", book_id=book_id, reading_time=reading_time))
+
+
 
 
 @app.route("/search", methods=["GET"])
@@ -782,6 +863,87 @@ def edit_preferences():
         reading_times=READING_TIMES,
         languages=LANGUAGES
     )
+
+PRICE_IDS = {
+    "monthly": "price_1TGzWVBpSGQbWzE97BqBOiX2",
+    "yearly":  "price_1TGzlzBpSGQbWzE9yYI4eWEF",
+}
+
+@app.route("/create-checkout-session", methods=["POST"])
+def create_checkout_session():
+    data = request.get_json() or {}
+    user_email = data.get("email")
+    plan = data.get("plan", "monthly")  # read plan from frontend
+
+    if not user_email:
+        return jsonify({"error": "Email required"}), 400
+
+    price_id = PRICE_IDS.get(plan)
+    if not price_id:
+        return jsonify({"error": "Invalid plan"}), 400
+
+    # Set mode based on plan type
+    if plan in ["monthly", "yearly"]:
+        checkout_mode = "subscription"
+    else:
+        checkout_mode = "payment"
+
+    try:
+        session = stripe.checkout.Session.create(
+            line_items=[{"price": price_id, "quantity": 1}],
+            mode=checkout_mode,
+            success_url="https://yourdomain.com/success",
+            cancel_url="https://yourdomain.com/pricing",
+        )
+        return jsonify({"url": session.url})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/stripe-webhook", methods=["POST"])
+def stripe_webhook():
+    payload = request.data
+    sig_header = request.headers.get("stripe-signature")
+    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+    event = None
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+    except Exception as e:
+        print(f"Webhook error: {e}")
+        return "", 400
+
+    if event["type"] == "checkout.session.completed":
+        session_obj = event["data"]["object"]
+        email = session_obj.get("customer_email")
+        if email:
+            set_user_premium_by_email(email)
+            print(f"✅ User {email} upgraded to premium.")
+    return "", 200
+
+
+@app.route("/pricing", methods=["GET", "POST"])
+def pricing():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        plan = request.form.get("plan") or request.json.get("plan") if request.is_json else None
+        if plan == "free":
+            # Optionally, set user as non-premium (already default)
+            session["is_premium"] = False
+            prefs = get_preferences(session["user_id"])
+            if not prefs:
+                return redirect(url_for("onboarding"))
+            else:
+                return redirect(url_for("books"))
+        # After plan selection/payment, check if onboarding is complete
+        prefs = get_preferences(session["user_id"])
+        if not prefs:
+            return redirect(url_for("onboarding"))
+        else:
+            return redirect(url_for("books"))
+    return render_template("pricing.html")
 
 
 if __name__ == "__main__":
