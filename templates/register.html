@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-center">
+  <div class="auth-card fade-up">
+
+    <div class="auth-top">
+      <div class="auth-icon">✨</div>
+      <h2>Start reading smarter</h2>
+      <p>Create your free account — it takes under a minute</p>
+    </div>
+
+    <div class="auth-body">
+      <form method="POST" action="/register">
+
+        <div class="field-group">
+          <label class="field-label">Full Name</label>
+          <input type="text" name="name" class="field-input" placeholder="John Doe" required autocomplete="name">
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Email Address</label>
+          <input type="email" name="email" class="field-input" placeholder="you@example.com" required
+            autocomplete="email">
+        </div>
+
+        <div class="field-group" style="margin-bottom:1.5rem;">
+          <label class="field-label">Password</label>
+          <input type="password" name="password" class="field-input" placeholder="Min. 6 characters" required
+            autocomplete="new-password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          Create Account →
+        </button>
+      </form>
+
+      <div class="or-divider" style="margin:1.5rem 0;">or</div>
+
+      <!-- Google Sign-Up Button -->
+      <button id="google-register-btn" type="button" class="btn btn-google btn-full btn-lg" style="margin-bottom:1rem;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+          style="height:20px;vertical-align:middle;margin-right:8px;"> Sign up with Google
+      </button>
+
+      <p style="text-align:center; font-size:0.85rem; color:var(--text-muted);">
+        Already have an account?
+        <a href="{{ url_for('login') }}" style="color:var(--honey); font-weight:600; margin-left:4px;">
+          Login here →
+        </a>
+      </p>
+
+      <div class="perks-box">
+        <p class="perks-title">What you get</p>
+        <div class="perk-item"><span class="perk-dot"></span>Personalised AI book summaries</div>
+        <div class="perk-item"><span class="perk-dot"></span>Deep-dive key point explanations</div>
+        <div class="perk-item"><span class="perk-dot"></span>Full reading history & ratings</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Firebase App (the core Firebase SDK) -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+<script>
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "{{ firebase_api_key }}",
+    authDomain: "{{ firebase_auth_domain }}",
+    projectId: "{{ firebase_project_id }}",
+  };
+  firebase.initializeApp(firebaseConfig);
+
+  document.getElementById('google-register-btn').onclick = function () {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+      .then(function (result) {
+        const user = result.user;
+        user.getIdToken().then(function (idToken) {
+          fetch("/auth/google", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: user.displayName,
+              email: user.email,
+              google_uid: user.uid
+            })
+          })
+            .then(res => res.json())
+            .then(data => {
+              if (data.redirect) {
+                window.location.href = data.redirect;
+              } else if (data.error) {
+                alert(data.error);
+              }
+            });
+        });
+      })
+      .catch(function (error) {
+        alert(error.message || "Google sign-up failed");
+      });
+  };
+</script>
+{% endblock %}

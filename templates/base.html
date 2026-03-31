@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📚 BookSummary AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <!-- ── ADDED: PostHog JS snippet for frontend tracking ─────────────────── -->
+  <script>
+    !function (t, e) { var o, n, p, r; e.__SV || (window.posthog = e, e._i = [], e.init = function (i, s, a) { function g(t, e) { var o = e.split("."); 2 == o.length && (t = t[o[0]], e = o[1]), t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))) } } (p = t.createElement("script")).type = "text/javascript", p.crossOrigin = "anonymous", p.async = !0, p.src = s.api_host + "/static/array.js", (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r); var u = e; for (void 0 !== a ? u = e[a] = [] : a = "posthog", u.people = u.people || [], u.toString = function (t) { var e = "posthog"; return "posthog" !== a && (e += "." + a), t || (e += " (stub)"), e }, u.people.toString = function () { return u.toString(1) + " (stub)" }, o = "capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "), n = 0; n < o.length; n++)g(u, o[n]); e._i.push([i, s, a]) }, e.__SV = 1) }(document, window.posthog || []);
+
+    posthog.init("{{ posthog_key }}", {
+      api_host: "https://us.posthog.com",
+      autocapture: true,       // auto tracks clicks, inputs, page views
+      capture_pageview: true,  // track every page visit automatically
+    });
+
+    {% if session.user_id %}
+    // ── ADDED: Identify logged-in user so PostHog links events to real person
+    posthog.identify("{{ session.user_id }}", {
+      name: "{{ session.user_name }}",
+    });
+    {% endif %}
+  </script>
+  <!-- ────────────────────────────────────────────────────────────────────── -->
+
+</head>
+
+<body>
+
+  <!-- Warm animated background -->
+  <div class="mesh-bg">
+    <div class="mesh-orb-mid"></div>
+  </div>
+
+  <!-- ── Navbar ── -->
+  <nav class="navbar">
+    <a class="navbar-brand" href="/">
+      <span style="font-size:1.3rem;">📚</span>
+      Book<span class="brand-accent">Summary</span> AI
+    </a>
+
+    {% if session.user_id %}
+    <div class="nav-items">
+      <span class="nav-user">
+        <span class="nav-avatar">{{ session.user_name[0] | upper }}</span>
+        {{ session.user_name.split()[0] }}
+      </span>
+      <a class="nav-link" href="{{ url_for('books') }}">Books</a>
+      <a class="nav-link" href="{{ url_for('history') }}">History</a>
+      <a class="nav-link" href="{{ url_for('edit_preferences') }}">Preferences</a>
+      <a class="nav-logout" href="{{ url_for('logout') }}">Sign out</a>
+    </div>
+    {% endif %}
+  </nav>
+
+  <!-- ── Flash Messages ── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="alert-bar">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">
+      <span>{% if category == 'success' %}✓{% else %}⚠{% endif %}</span>
+      <span>{{ message }}</span>
+      <button class="alert-close" onclick="this.parentElement.remove()">✕</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <!-- ── Main Content ── -->
+  {% block content %}{% endblock %}
+
+  {% block scripts %}{% endblock %}
+
+</body>
+
+</html>

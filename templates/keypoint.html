@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-wrap" style="max-width:740px;">
+
+  <!-- Top Nav -->
+  <div style="display:flex; align-items:center; justify-content:space-between;
+              margin-bottom:1.5rem;" class="fade-up">
+    <a href="{{ url_for('summary', book_id=book_id, reading_time=reading_time) }}" class="btn btn-ghost btn-sm">Back to
+      Summary</a>
+    <span style="font-size:0.7rem; font-family:var(--font-mono); letter-spacing:0.09em;
+                 color:var(--text-muted); text-transform:uppercase;">
+      Point {{ point_index + 1 }} of {{ total_points }}
+    </span>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="kp-progress-bar fade-up">
+    <div class="kp-progress-fill" style="width:{{ ((point_index + 1) / total_points * 100) | int }}%;"></div>
+  </div>
+
+  <!-- Book Context -->
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.5rem;" class="fade-up">
+    {% if book.cover_image %}
+    <img src="{{ book.cover_image }}" alt="Cover" style="width:32px; height:44px; object-fit:cover; border-radius:5px;
+                opacity:0.7; border:1px solid rgba(0,0,0,0.08);">
+    {% endif %}
+    <div>
+      <span style="font-size:0.68rem; font-family:var(--font-mono); letter-spacing:0.08em;
+                   text-transform:uppercase; color:var(--text-muted);">From</span>
+      <span style="font-style:italic; font-size:0.85rem; color:var(--text-secondary); margin-left:6px;">
+        {{ book.title }}
+      </span>
+      <span style="font-size:0.8rem; color:var(--text-muted);"> by {{ book.author }}</span>
+    </div>
+  </div>
+
+  <!-- Key Point Header Card -->
+  <div class="card fade-up-2" style="margin-bottom:1.25rem; border-color:rgba(192,125,58,0.25);
+       background:linear-gradient(135deg, rgba(192,125,58,0.06), rgba(250,246,240,0.95));">
+    <div class="card-body">
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:1rem;">
+        <div style="width:46px; height:46px; background:linear-gradient(135deg,var(--caramel),#8a4e18);
+                    border-radius:13px; display:flex; align-items:center; justify-content:center;
+                    font-family:var(--font-display); font-size:1.1rem; font-weight:700;
+                    color:#fff; box-shadow:0 6px 20px rgba(192,125,58,0.28);
+                    flex-shrink:0;">
+          {{ point_index + 1 }}
+        </div>
+        <h2 style="font-family:var(--font-display); font-size:1.45rem; font-style:italic;
+                   font-weight:700; line-height:1.25; color:var(--latte); margin:0;">
+          {{ key_point.title }}
+        </h2>
+      </div>
+      <div class="insight-box">
+        <span class="insight-label">Core Insight</span>
+        <p class="insight-text">{{ key_point.insight }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deep Explanation -->
+  <div class="card fade-up-3" style="margin-bottom:1.25rem;">
+    <div class="section-strip">
+      <h5>Deep Explanation</h5>
+    </div>
+    <div class="card-body">
+      {% for para in detail.deep_explanation.split('\n\n') %}
+      {% if para.strip() %}
+      <p style="color:var(--text-secondary); line-height:1.95; margin-bottom:1.35rem;
+                  font-size:0.93rem;">
+        {{ para.strip() }}
+      </p>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Prev / Next Nav -->
+  <div class="kp-nav-row fade-up-4">
+    {% if point_index > 0 %}
+    <a href="{{ url_for('keypoint', book_id=book_id, reading_time=reading_time, point_index=point_index - 1) }}"
+      class="kp-nav-btn" onclick="showLoader()">
+      <span class="kp-nav-dir">← Previous</span>
+      <span class="kp-nav-name">Point {{ point_index }}</span>
+    </a>
+    {% else %}
+    <div></div>
+    {% endif %}
+
+    <a href="{{ url_for('summary', book_id=book_id, reading_time=reading_time) }}" class="kp-nav-center">All Points</a>
+
+    {% if point_index < total_points - 1 %} <a
+      href="{{ url_for('keypoint', book_id=book_id, reading_time=reading_time, point_index=point_index + 1) }}"
+      class="kp-nav-btn next-btn" onclick="showLoader()">
+      <span class="kp-nav-dir">Next →</span>
+      <span class="kp-nav-name">Point {{ point_index + 2 }}</span>
+      </a>
+      {% else %}
+      <a href="{{ url_for('summary', book_id=book_id, reading_time=reading_time) }}" class="kp-nav-btn next-btn"
+        style="border-color:rgba(58,138,114,0.28); background:rgba(58,138,114,0.05);">
+        <span class="kp-nav-dir" style="color:var(--rain);">Done</span>
+        <span class="kp-nav-name">Back to Summary</span>
+      </a>
+      {% endif %}
+  </div>
+
+</div>
+
+<!-- Loader -->
+<div id="loader" class="loader-overlay hidden">
+  <div class="spinner"></div>
+  <div class="loader-title">Loading deep-dive…</div>
+  <div class="loader-sub">Generated once, instant on revisit</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function showLoader() {
+    document.getElementById('loader').classList.remove('hidden');
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-wrap-narrow">
+  <div class="card fade-up" style="overflow:hidden;">
+
+    <div class="onboard-hero">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">☕</div>
+      <h2>Your Reading Preferences</h2>
+      <p>Help us tailor your summaries — takes under 2 minutes</p>
+    </div>
+
+    <form method="POST" action="/onboarding">
+
+      <!-- Reading Goal -->
+      <div class="form-section">
+        <div class="form-section-label">🎯 Reading Goal</div>
+        <div class="toggle-grid toggle-grid-2">
+          {% for goal in goals %}
+          <div>
+            <input type="radio" class="toggle-input" name="goal" id="goal_{{ loop.index }}" value="{{ goal }}" required>
+            <label class="toggle-label" for="goal_{{ loop.index }}">{{ goal }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Background -->
+      <div class="form-section">
+        <div class="form-section-label">👤 Your Background</div>
+        <div class="toggle-grid toggle-grid-3">
+          {% for bg in backgrounds %}
+          <div>
+            <input type="radio" class="toggle-input" name="background" id="bg_{{ loop.index }}" value="{{ bg }}"
+              required>
+            <label class="toggle-label" for="bg_{{ loop.index }}">{{ bg }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Summary Style -->
+      <div class="form-section">
+        <div class="form-section-label">📝 Summary Style</div>
+        <div class="toggle-grid toggle-grid-3">
+          {% for s in styles %}
+          <div>
+            <input type="radio" class="toggle-input" name="style" id="style_{{ loop.index }}" value="{{ s }}" required>
+            <label class="toggle-label" for="style_{{ loop.index }}">{{ s }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Tone -->
+      <div class="form-section">
+        <div class="form-section-label">🎙️ Preferred Tone</div>
+        <div class="toggle-grid toggle-grid-3">
+          {% for t in tones %}
+          <div>
+            <input type="radio" class="toggle-input" name="tone" id="tone_{{ loop.index }}" value="{{ t }}" required>
+            <label class="toggle-label" for="tone_{{ loop.index }}">{{ t }}</label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Reading Time -->
+      <div class="form-section">
+        <div class="form-section-label">⏱️ Reading Time</div>
+        <div class="toggle-grid toggle-grid-3">
+          {% for rt in reading_times %}
+          <div>
+            <input type="radio" class="toggle-input" name="reading_time" id="rt_{{ rt }}" value="{{ rt }}" {% if rt==10
+              %}checked{% endif %} required>
+            <label class="time-card" for="rt_{{ rt }}">
+              <div class="time-num">{{ rt }}</div>
+              <div class="time-sublabel">
+                min · {% if rt == 5 %}Quick{% elif rt == 10 %}Balanced{% else %}Deep dive{% endif %}
+              </div>
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Genres -->
+      <div class="form-section">
+        <div class="form-section-label">📚 Choose 2 Genres</div>
+        <div class="toggle-grid toggle-grid-2">
+          {% for g in genres %}
+          <div>
+            <input type="checkbox" class="toggle-input genre-checkbox" name="genres" value="{{ g }}"
+              id="genre_{{ loop.index }}">
+            <label class="toggle-label" for="genre_{{ loop.index }}">{{ g }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
+          Select exactly 2 genres
+        </p>
+      </div>
+
+      <!-- Language -->
+      <div class="form-section">
+        <div class="form-section-label">🌍 Preferred Language</div>
+
+        <div class="toggle-grid toggle-grid-3">
+          <div>
+            <input type="radio" class="toggle-input" name="language" value="en" id="lang_en" checked>
+            <label class="toggle-label" for="lang_en">English</label>
+          </div>
+
+          <div>
+            <input type="radio" class="toggle-input" name="language" value="hi" id="lang_hi">
+            <label class="toggle-label" for="lang_hi">Hindi</label>
+          </div>
+
+          <div>
+            <input type="radio" class="toggle-input" name="language" value="es" id="lang_es">
+            <label class="toggle-label" for="lang_es">Spanish</label>
+          </div>
+        </div>
+
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
+          You can change this later anytime
+        </p>
+      </div>
+
+      <!-- Submit -->
+      <div style="margin-top:2rem;">
+        <button type="submit" class="btn btn-primary btn-full btn-lg">
+          Save Preferences →
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = document.querySelectorAll(".genre-checkbox");
+
+    checkboxes.forEach(cb => {
+      cb.addEventListener("change", function () {
+        const checked = document.querySelectorAll(".genre-checkbox:checked");
+        if (checked.length > 2) {
+          this.checked = false;
+          alert("Please select only 2 genres.");
+        }
+      });
+    });
+  });
+</script>
+
+{% endblock %}

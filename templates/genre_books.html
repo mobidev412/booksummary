@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div style="text-align:center; margin-bottom:2.5rem;" class="fade-up">
+    <div style="display:inline-flex; align-items:center; justify-content:center;
+                width:58px; height:58px; border-radius:16px; font-size:1.75rem;
+                background:rgba(192,125,58,0.1); border:1px solid rgba(192,125,58,0.2);
+                margin-bottom:1rem;">
+      📚
+    </div>
+    <h2 style="font-family:var(--font-display); font-size:2rem; font-style:italic;
+               font-weight:700; color:var(--latte); margin-bottom:8px;">
+      {{ genre }} Books
+    </h2>
+    <p style="color:var(--text-muted); font-size:0.88rem;">
+      Top picks in the
+      <span class="badge badge-caramel" style="margin-left:4px;">{{ genre }}</span>
+      category
+    </p>
+  </div>
+
+  {% if books %}
+  <div class="book-grid fade-up-2">
+    {% for book in books %}
+    <div class="book-card">
+      <div style="display:flex; gap:12px; margin-bottom:10px; align-items:flex-start;">
+        {% if book.cover_image %}
+        <img src="{{ book.cover_image }}" alt="Cover" class="book-cover">
+        {% else %}
+        <div class="book-cover-placeholder">📗</div>
+        {% endif %}
+        <div style="flex:1; min-width:0;">
+          <div class="book-title">{{ book.title }}</div>
+          <div class="book-author">by {{ book.author }}</div>
+          {% if book.published_year %}
+          <span class="badge badge-muted" style="margin-top:5px;">{{ book.published_year }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if book.description %}
+      <p class="book-desc">{{ book.description }}</p>
+      {% endif %}
+      <form method="POST" action="/select-book" onsubmit="showLoader()">
+        <input type="hidden" name="title"  value="{{ book.title }}">
+        <input type="hidden" name="author" value="{{ book.author }}">
+        <button type="submit" class="btn btn-ghost btn-sm btn-full">
+          Get Summary →
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card fade-up">
+    <div class="empty-state">
+      <span class="empty-icon">😕</span>
+      <h4>No books found</h4>
+      <p>We couldn't find suggestions for
+        <strong style="color:var(--honey);">{{ genre }}</strong> right now.</p>
+      <a href="{{ url_for('books') }}" class="btn btn-ghost">🔍 Search Manually</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Back -->
+  <div style="text-align:center; margin-top:2.5rem;" class="fade-up-4">
+    <a href="{{ url_for('books') }}" class="btn btn-secondary" style="padding:10px 28px;">
+      ← Back to Books
+    </a>
+  </div>
+
+</div>
+
+<!-- Loader -->
+<div id="loader" class="loader-overlay hidden">
+  <div class="spinner"></div>
+  <div class="loader-title">Brewing your summary…</div>
+  <div class="loader-sub">This may take 10–20 seconds</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function showLoader() {
+    document.getElementById('loader').classList.remove('hidden');
+  }
+</script>
+{% endblock %}

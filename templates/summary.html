@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="page-wrap" style="max-width:780px;">
+
+  <!-- Book Hero -->
+
+  <div class="summary-hero fade-up">
+    <div style="display:flex; align-items:flex-start; gap:1.5rem;">
+      {% if book.cover_image %}
+      <img src="{{ book.cover_image }}" alt="Cover" style="width:90px; border-radius:10px;
+                  box-shadow:0 8px 28px rgba(140,80,20,0.18); flex-shrink:0;">
+      {% endif %}
+      <div style="flex:1;">
+        <p style="font-size:0.68rem; font-family:var(--font-mono); letter-spacing:0.1em;
+                  text-transform:uppercase; color:var(--caramel); margin-bottom:8px;">
+          Summary Ready
+        </p>
+
+        <h1 class="summary-title">{{ book.title }}</h1>
+        <p class="summary-author">by {{ book.author }}</p>
+
+        <div style="display:flex; align-items:center; gap:10px; margin:10px 0 14px;">
+          <div style="flex:1; height:1px; background:linear-gradient(90deg,rgba(192,125,58,0.30),transparent);"></div>
+          <svg width="60" height="12" viewBox="0 0 60 12" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style="opacity:0.45; flex-shrink:0;">
+            <circle cx="30" cy="6" r="2.5" fill="#c07d3a" />
+            <circle cx="20" cy="6" r="1.5" fill="#c07d3a" opacity="0.7" />
+            <circle cx="40" cy="6" r="1.5" fill="#c07d3a" opacity="0.7" />
+            <circle cx="12" cy="6" r="1" fill="#c07d3a" opacity="0.4" />
+            <circle cx="48" cy="6" r="1" fill="#c07d3a" opacity="0.4" />
+            <line x1="0" y1="6" x2="8" y2="6" stroke="#c07d3a" stroke-width="1" opacity="0.3" />
+            <line x1="52" y1="6" x2="60" y2="6" stroke="#c07d3a" stroke-width="1" opacity="0.3" />
+          </svg>
+          <div style="flex:1; height:1px; background:linear-gradient(90deg,transparent,rgba(192,125,58,0.30));"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          {% if book.published_year %}
+          <span class="badge badge-muted">{{ book.published_year }}</span>
+          {% endif %}
+
+          <span class="badge badge-caramel">
+            {{ result.reading_time }} min read
+          </span>
+
+          {% if result.genre %}
+          <span class="badge badge-rain">{{ result.genre }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- What's Inside -->
+
+  <div class="card mb fade-up-2" style="margin-bottom:1.25rem;">
+    <div class="section-strip">
+      <h5>{{ labels.whats_inside }}</h5>
+    </div>
+    <div class="card-body">
+      <p style="color:var(--text-secondary); line-height:1.85; margin:0; font-size:0.93rem;">
+        {{ result.whats_inside }}
+      </p>
+    </div>
+  </div>
+
+  <!-- You Will Learn -->
+
+  <div class="card fade-up-2" style="margin-bottom:1.25rem;">
+    <div class="section-strip">
+      <h5>{{ labels.youll_learn }}</h5>
+    </div>
+    <div class="card-body">
+      {% for item in result.youll_learn %}
+      <div class="learn-item">
+        <div class="learn-check"></div>
+        <span style="font-size:0.9rem; color:var(--text-secondary);">{{ item }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Key Points -->
+
+  <div class="card fade-up-3" style="margin-bottom:1.25rem;">
+    <div class="section-strip">
+      <h5>{{ labels.key_points }}</h5>
+    </div>
+    <div class="card-body">
+      <p style="font-size:0.75rem; color:var(--text-muted); font-family:var(--font-mono);
+                letter-spacing:0.04em; margin-bottom:1rem;">
+        Tap any point for a full deep-dive
+      </p>
+
+      {% for kp in result.key_points %}
+      <a href="{{ url_for('keypoint', book_id=book_id, reading_time=reading_time, point_index=loop.index0) }}"
+        class="kp-row">
+        <div class="kp-num">{{ loop.index }}</div>
+        <div style="flex:1; min-width:0;">
+          <div class="kp-title">{{ kp.title }}</div>
+          <div class="kp-preview">{{ kp.detail }}</div>
+        </div>
+        <div class="kp-arrow"></div>
+      </a>
+      {% endfor %}
+    </div>
+
+  </div>
+
+  <!-- Quote -->
+
+  {% if result.quote %}
+
+  <div class="fade-up-3" style="margin-bottom:1.25rem;">
+    <div class="quote-block">
+      <span class="quote-mark">"</span>
+      <p class="quote-text">{{ result.quote }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Conclusion -->
+
+  <div class="card fade-up-3" style="margin-bottom:1.25rem;">
+    <div class="section-strip">
+      <h5>{{ labels.conclusion }}</h5>
+    </div>
+    <div class="card-body">
+      <p style="color:var(--text-secondary); line-height:1.85; margin:0;">
+        {{ result.conclusion if result.conclusion and result.conclusion.strip() else "No conclusion available." }}
+      </p>
+    </div>
+  </div>
+
+  <!-- About Author -->
+
+  <div class="card fade-up-3" style="margin-bottom:1.25rem;">
+    <div class="section-strip">
+      <h5>{{ labels.about_author }}</h5>
+    </div>
+    <div class="card-body">
+      <p style="color:var(--text-secondary); line-height:1.85; margin:0;">
+        {{ result.about_author }}
+      </p>
+    </div>
+  </div>
+
+</div>
+
+{% block scripts %}
+<script>
+  const _summaryStart = Date.now();
+  let _completedFired = false;
+
+  window.addEventListener("scroll", function () {
+    if (_completedFired) return;
+
+    const scrolled = window.scrollY + window.innerHeight;
+    const totalHeight = document.documentElement.scrollHeight;
+
+    if (scrolled >= totalHeight - 100) {
+      _completedFired = true;
+
+      posthog.capture("summary_completed", {
+        book_title: "{{ book.title }}",
+        author: "{{ book.author }}",
+        language: "{{ prefs.preferred_language if prefs else 'en' }}",
+        reading_time: {{ result.reading_time }},
+  });
+    }
+  });
+
+  window.addEventListener("beforeunload", function () {
+    const timeSpent = Math.round((Date.now() - _summaryStart) / 1000);
+
+    posthog.capture("time_spent_on_summary", {
+      book_title: "{{ book.title }}",
+      author: "{{ book.author }}",
+      time_seconds: timeSpent,
+      completed: _completedFired,
+    });
+  });
+</script>
+{% endblock %}
+{% endblock %}

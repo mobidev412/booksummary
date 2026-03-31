@@ -1,0 +1,10 @@
+werkzeug
+psycopg2-binary
+flask
+gunicorn
+google-genai
+requests
+posthog
+dotenv
+firebase-admin
+

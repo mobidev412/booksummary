@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div style="text-align:center; margin-bottom:2.5rem;" class="fade-up">
+    <p style="font-size:0.72rem; font-family:var(--font-mono); letter-spacing:0.12em;
+              text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">
+      ☕ Your Library
+    </p>
+    <h2 style="font-family:var(--font-display); font-size:2.2rem; font-style:italic;
+               font-weight:700; color:var(--latte); letter-spacing:-0.02em; margin-bottom:10px;">
+      Find Your Next Book
+    </h2>
+    <p style="color:var(--text-muted); font-size:0.88rem;">
+      Your genres:
+      <span class="badge badge-caramel" style="margin:0 4px;">{{ prefs.genre_1 }}</span>
+      <span class="badge badge-rain" style="margin:0 4px;">{{ prefs.genre_2 }}</span>
+    </p>
+  </div>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:1.5rem;"
+       class="fade-up-2">
+
+    <!-- Search Card -->
+    <div class="card">
+      <div class="section-strip">
+        <div class="strip-icon" style="background:rgba(192,125,58,0.12);">🔍</div>
+        <h5>Search a Book</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="/books" onsubmit="showLoader()">
+          <input type="hidden" name="action" value="search">
+          <div class="field-group">
+            <label class="field-label">Book Title</label>
+            <input type="text" name="title" class="field-input"
+                   placeholder="e.g. Atomic Habits" required>
+          </div>
+          <div class="field-group" style="margin-bottom:1.25rem;">
+            <label class="field-label">Author (optional)</label>
+            <input type="text" name="author" class="field-input"
+                   placeholder="e.g. James Clear">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">
+            Search →
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Suggest Card -->
+    <div class="card">
+      <div class="section-strip">
+        <div class="strip-icon" style="background:rgba(126,184,164,0.12);">✨</div>
+        <h5>Personalised Suggestions</h5>
+      </div>
+      <div class="card-body" style="display:flex; flex-direction:column; align-items:center;
+                                    justify-content:center; text-align:center; height:calc(100% - 57px);">
+        <p style="color:var(--text-muted); font-size:0.86rem; margin-bottom:1.5rem; font-style:italic;">
+          Based on your genres &amp; reading goal
+        </p>
+        <form method="POST" action="/books">
+          <input type="hidden" name="action" value="suggest">
+          <button type="submit" class="btn btn-rain" style="padding:13px 36px;">
+            ✨ Suggest Books
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestions -->
+  {% if suggestions %}
+    {% for genre, books in suggestions.items() %}
+    <div class="genre-row fade-up-3">
+      <span class="badge badge-caramel" style="white-space:nowrap;">{{ genre }}</span>
+      <div class="genre-row-line"></div>
+    </div>
+
+    <div class="book-grid fade-up-3">
+      {% for book in books %}
+      <div class="book-card">
+        <div style="display:flex; gap:12px; margin-bottom:10px; align-items:flex-start;">
+          {% if book.cover_image %}
+          <img src="{{ book.cover_image }}" alt="Cover" class="book-cover">
+          {% else %}
+          <div class="book-cover-placeholder">📗</div>
+          {% endif %}
+          <div style="flex:1; min-width:0;">
+            <div class="book-title">{{ book.title }}</div>
+            <div class="book-author">by {{ book.author }}</div>
+            {% if book.published_year %}
+            <span class="badge badge-muted" style="margin-top:5px;">{{ book.published_year }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% if book.description %}
+        <p class="book-desc">{{ book.description }}</p>
+        {% endif %}
+        <form method="POST" action="/select-book" onsubmit="showLoader()">
+          <input type="hidden" name="title"  value="{{ book.title }}">
+          <input type="hidden" name="author" value="{{ book.author }}">
+          <button type="submit" class="btn btn-ghost btn-sm btn-full">
+            Get Summary →
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+</div>
+
+<!-- Loader -->
+<div id="loader" class="loader-overlay hidden">
+  <div class="spinner"></div>
+  <div class="loader-title">Brewing your summary…</div>
+  <div class="loader-sub">This may take 10–20 seconds</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function showLoader() {
+    document.getElementById('loader').classList.remove('hidden');
+  }
+</script>
+{% endblock %}

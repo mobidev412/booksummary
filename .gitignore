@@ -1,0 +1,14 @@
+venv/
+
+# firebase_service_account.json
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+.DS_Store
+.idea/
+.vscode/
+.env
