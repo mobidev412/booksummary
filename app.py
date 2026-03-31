@@ -946,5 +946,26 @@ def pricing():
     return render_template("pricing.html")
 
 
+@app.route("/success")
+def success():
+    # User lands here after successful Stripe payment
+    if "user_id" not in session:
+        flash("Please login to continue.", "error")
+        return redirect(url_for("login"))
+    # After payment, user should be premium (webhook sets in DB, but session may not update until next login)
+    session["is_premium"] = True
+    prefs = get_preferences(session["user_id"])
+    if not prefs:
+        return redirect(url_for("onboarding"))
+    return redirect(url_for("books"))
+
+
+@app.route("/cancel")
+def cancel():
+    # User lands here after cancelling Stripe checkout
+    flash("Payment cancelled. You can choose a plan to continue.", "info")
+    return redirect(url_for("pricing"))
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5001)
