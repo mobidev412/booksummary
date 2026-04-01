@@ -930,47 +930,44 @@ def create_checkout_session():
 @app.route("/stripe-webhook", methods=["POST"])
 def stripe_webhook():
     print("🔥 WEBHOOK HIT")
-
     payload = request.data
     sig_header = request.headers.get("stripe-signature")
     endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
-
     try:
-        event = stripe.Webhook.construct_event(
-            payload, sig_header, endpoint_secret
-        )
+        event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
         print("✅ EVENT:", event["type"])
     except Exception as e:
         print("❌ SIGNATURE ERROR:", str(e))
         return "", 400
 
-    try:
-        if event["type"] == "checkout.session.completed":
-            session_obj = event["data"]["object"]
-
-            print("🔥 FULL SESSION:", session_obj)
-
-            # ✅ SAFE email extraction
-            email = session_obj.get("customer_email")
-
-            if not email:
-                email = session_obj.get("metadata", {}).get("user_email")
-
-            print("📧 EMAIL:", email)
-
-            if email:
+    if event["type"] == "checkout.session.completed":
+        session_obj = event["data"]["object"]
+        print("🔥 FULL SESSION:", session_obj)
+        # Try all possible ways to get the email
+        email = session_obj.get("customer_email")
+        if not email:
+            email = session_obj.get("metadata", {}).get("user_email")
+        if not email:
+            # Try to fetch customer object if customer id exists
+            customer_id = session_obj.get("customer")
+            if customer_id:
                 try:
-                    set_user_premium_by_email(email)
-                    print(f"✅ User {email} upgraded")
-                except Exception as db_error:
-                    print("❌ DB ERROR:", str(db_error))
-            else:
-                print("❌ EMAIL NOT FOUND")
-
-    except Exception as e:
-        print("❌ WEBHOOK ERROR:", str(e))
-        return "", 500
-
+                    customer = stripe.Customer.retrieve(customer_id)
+                    email = customer.get("email")
+                except Exception as e:
+                    print(f"❌ Stripe customer fetch failed: {e}")
+        print("📧 EMAIL FOR PREMIUM:", email)
+        if email:
+            try:
+                set_user_premium_by_email(email)
+                print(f"✅ User {email} upgraded")
+            except Exception as db_error:
+                print("❌ DB ERROR:", str(db_error))
+                # Don't return 500, just log
+        else:
+            print("❌ EMAIL NOT FOUND in session or customer")
+            # Don't return 500, just log
+    # Always return 200 so Stripe doesn't retry
     return "", 200
 
 @app.route("/pricing", methods=["GET", "POST"])
