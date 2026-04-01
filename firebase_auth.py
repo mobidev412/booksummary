@@ -40,6 +40,7 @@ def handle_google_login(full_name, email, google_uid):
             "user_id": existing_google["id"],
             "full_name": existing_google["full_name"],
             "is_new": False,
+            "is_premium": existing_google["is_premium"],
         }
 
     # 2️⃣ Existing email user

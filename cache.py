@@ -9,7 +9,7 @@ def _normalize_title(title: str) -> str:
     e.g. 'Rich Dad Poor Dad - What the Rich Teach...' → 'Rich Dad Poor Dad'
          'Atomic Habits: An Easy & Proven Way...'    → 'Atomic Habits'
     """
-    for sep in (" - ", ": ", " : "):
+    for sep in (" - ", ": ", " : ", " – ", " — "):
         if sep in title:
             title = title.split(sep)[0]
     return title.strip()
@@ -190,9 +190,12 @@ def save_book(book_data):
     conn   = get_connection()
     cursor = get_cursor(conn)
 
+    norm_title  = _normalize_title(book_data["title"])
+    norm_author = _normalize_author(book_data.get("author", ""))
+
     cursor.execute(
         "SELECT id FROM books WHERE title = %s AND author = %s",
-        (book_data["title"], book_data.get("author", ""))
+        (norm_title, norm_author)
     )
     existing = cursor.fetchone()
     if existing:
@@ -205,13 +208,13 @@ def save_book(book_data):
         VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id
     """, (
-        book_data.get("title", ""),
-        book_data.get("author", ""),
-        book_data.get("genre", ""),
-        book_data.get("cover_image", ""),
-        book_data.get("description", ""),
-        book_data.get("published_year", ""),
-    ))
+    norm_title,
+    norm_author,
+    book_data.get("genre", ""),
+    book_data.get("cover_image", ""),
+    book_data.get("description", ""),
+    book_data.get("published_year", ""),
+))
     book_id = cursor.fetchone()["id"]
     conn.commit()
     conn.close()

@@ -54,7 +54,7 @@ class _PooledConn:
         conn = object.__getattribute__(self, "_conn")
         try:
             if not conn.closed:
-                conn.reset()        # rollback any uncommitted txn before reuse
+                conn.rollback()       # rollback any uncommitted txn before reuse
         except Exception:
             pass
         pool.putconn(conn)

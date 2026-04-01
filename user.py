@@ -41,8 +41,8 @@ def register_user(full_name, email, password):
     try:
         password_hash = generate_password_hash(password)
         cursor.execute(
-            "INSERT INTO users (full_name, email, password_hash, firebase_uid) VALUES (%s, %s, %s, %s) RETURNING id",
-            (full_name, email, password_hash, firebase_uid)
+            "INSERT INTO users (full_name, email, password_hash, firebase_uid, is_premium) VALUES (%s, %s, %s, %s, %s) RETURNING id",
+            (full_name, email, password_hash, firebase_uid, False)
         )
         user_id = cursor.fetchone()["id"]
         conn.commit()
@@ -154,7 +154,7 @@ def get_user_by_email(email):
     return dict(user) if user else None
 
 
-def create_google_user(full_name, email, google_uid):
+def create_google_user(full_name, email, google_uid, is_premium):
     """
     Create a new user who signed in with Google.
     No password — password_hash is NULL for Google users.
@@ -164,8 +164,8 @@ def create_google_user(full_name, email, google_uid):
     cursor = get_cursor(conn)
     try:
         cursor.execute("""
-            INSERT INTO users (full_name, email, google_uid)
-            VALUES (%s, %s, %s)
+            INSERT INTO users (full_name, email, google_uid, is_premium)
+            VALUES (%s, %s, %s, FALSE)
             RETURNING id
         """, (full_name, email, google_uid))
         user_id = cursor.fetchone()["id"]
@@ -223,7 +223,7 @@ def get_user_by_firebase_uid(firebase_uid):
     conn.close()
     return dict(user) if user else None
 
-def create_user_from_firebase(full_name, email, firebase_uid):
+def create_user_from_firebase(full_name, email, firebase_uid, is_premium):
     """
     Create a new user authenticated via Firebase.
     Password is NOT stored in our DB.
@@ -233,8 +233,8 @@ def create_user_from_firebase(full_name, email, firebase_uid):
 
     try:
         cursor.execute("""
-            INSERT INTO users (full_name, email, firebase_uid)
-            VALUES (%s, %s, %s)
+            INSERT INTO users (full_name, email, firebase_uid, is_premium)
+            VALUES (%s, %s, %s, FALSE)
             RETURNING id
         """, (full_name, email, firebase_uid))
 

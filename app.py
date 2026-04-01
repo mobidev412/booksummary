@@ -1,3 +1,4 @@
+from unittest import result
 from dotenv import load_dotenv
 load_dotenv()
 import os
@@ -76,11 +77,13 @@ def google_auth():
 
     if result is None:
         return jsonify({"error": "Failed to create account"}), 500
-
+    
+   
+    user = get_user_by_id(result["user_id"])
     session["user_id"]   = result["user_id"]
     session["user_name"] = result["full_name"]
     session["user_email"] = email
-    session["is_premium"] = result.get("is_premium", False)
+    session["is_premium"] = user.get("is_premium", False)
     
 
     if result.get("is_new"):
@@ -357,9 +360,12 @@ def onboarding():
             genres[0], genres[1] if len(genres) > 1 else genres[0],
             reading_time, language
         )
-        # Redirect to pricing if not premium
-        if not session.get("is_premium"):
-            return redirect(url_for("pricing"))
+        print("DEBUG plan_selected:", session.get("plan_selected"))
+        print("DEBUG is_premium:", session.get("is_premium"))
+        print("DEBUG all session:", dict(session))
+        # Redirect to pricing if not premium and plan not selected
+        # if not session.get("is_premium") and not session.get("plan_selected"):
+        #     return redirect(url_for("pricing"))
         return redirect(url_for("books"))
 
     prefs = get_preferences(session["user_id"])
@@ -381,8 +387,8 @@ def books():
     if "user_id" not in session:
         return redirect(url_for("login"))
     # Redirect to pricing if not premium
-    if not session.get("is_premium"):
-        return redirect(url_for("pricing"))
+    # if not session.get("is_premium"):
+    #     return redirect(url_for("pricing"))
 
     prefs = get_preferences(session["user_id"])
     suggestions = {"genre_1": [], "genre_2": []}
@@ -986,10 +992,14 @@ def pricing():
         plan = request.form.get("plan") or (
             request.json.get("plan") if request.is_json else None
         )
+        print(plan)
 
+        # Set plan_selected for all plans
+        session["plan_selected"] = True
+        session.modified = True  
         if plan == "free":
             user_email = session.get("user_email")
-
+            print(user_email)
             # ✅ UPDATE DATABASE (CRITICAL FIX)
             conn = get_connection()
             cursor = get_cursor(conn)
@@ -999,12 +1009,13 @@ def pricing():
                     "UPDATE users SET is_premium = FALSE WHERE email = %s",
                     (user_email,)
                 )
-                conn.commit()
+                conn.commit() 
                 print(f"🆓 User {user_email} set to FREE plan")
 
                 # ✅ Update session also
                 session["is_premium"] = False
-
+                session.modified = True
+                print("session updated to free plan")
             except Exception as e:
                 print("❌ Error setting free plan:", e)
                 conn.rollback()
