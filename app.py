@@ -191,13 +191,14 @@ def login():
 
         track_login(user["id"], email)
 
-        # Redirect to pricing if not premium
-        if not session.get("is_premium"):
-            return redirect(url_for("pricing"))
+        print("LOGIN → is_premium:", session["is_premium"])
 
+        # ✅ Allow both free + premium users
         prefs = get_preferences(user["id"])
+
         if not prefs:
             return redirect(url_for("onboarding"))
+
         return redirect(url_for("books"))
 
     return render_template("login.html")
@@ -980,22 +981,50 @@ def stripe_webhook():
 def pricing():
     if "user_id" not in session:
         return redirect(url_for("login"))
+
     if request.method == "POST":
-        plan = request.form.get("plan") or request.json.get("plan") if request.is_json else None
+        plan = request.form.get("plan") or (
+            request.json.get("plan") if request.is_json else None
+        )
+
         if plan == "free":
-            # Optionally, set user as non-premium (already default)
-            session["is_premium"] = False
+            user_email = session.get("user_email")
+
+            # ✅ UPDATE DATABASE (CRITICAL FIX)
+            conn = get_connection()
+            cursor = get_cursor(conn)
+
+            try:
+                cursor.execute(
+                    "UPDATE users SET is_premium = FALSE WHERE email = %s",
+                    (user_email,)
+                )
+                conn.commit()
+                print(f"🆓 User {user_email} set to FREE plan")
+
+                # ✅ Update session also
+                session["is_premium"] = False
+
+            except Exception as e:
+                print("❌ Error setting free plan:", e)
+                conn.rollback()
+            finally:
+                conn.close()
+
+            # Continue flow
             prefs = get_preferences(session["user_id"])
             if not prefs:
                 return redirect(url_for("onboarding"))
             else:
                 return redirect(url_for("books"))
-        # After plan selection/payment, check if onboarding is complete
+
+        # Paid plans (Stripe handles DB update via webhook)
         prefs = get_preferences(session["user_id"])
         if not prefs:
             return redirect(url_for("onboarding"))
         else:
             return redirect(url_for("books"))
+
     return render_template("pricing.html")
 
 
