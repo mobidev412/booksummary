@@ -892,6 +892,10 @@ def create_checkout_session():
         session = stripe.checkout.Session.create(
             line_items=[{"price": price_id, "quantity": 1}],
             mode=checkout_mode,
+            customer_email=user_email,
+            metadata={
+                "user_email": user_email  # 🔥 MUST HAVE
+            },
             success_url="https://booksummary-phi.vercel.app/success",
             cancel_url="https://booksummary-phi.vercel.app/pricing",
         )
@@ -900,28 +904,74 @@ def create_checkout_session():
         return jsonify({"error": str(e)}), 500
 
 
+# @app.route("/stripe-webhook", methods=["POST"])
+# def stripe_webhook():
+#     payload = request.data
+#     sig_header = request.headers.get("stripe-signature")
+#     endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+#     event = None
+#     try:
+#         event = stripe.Webhook.construct_event(
+#             payload, sig_header, endpoint_secret
+#         )
+#     except Exception as e:
+#         print(f"Webhook error: {e}")
+#         return "", 400
+
+#     if event["type"] == "checkout.session.completed":
+#         session_obj = event["data"]["object"]
+#         email = session_obj.get("customer_email")
+#         if email:
+#             set_user_premium_by_email(email)
+#             print(f"✅ User {email} upgraded to premium.")
+#     return "", 200
+
+
 @app.route("/stripe-webhook", methods=["POST"])
 def stripe_webhook():
+    print("🔥 WEBHOOK HIT")
+
     payload = request.data
     sig_header = request.headers.get("stripe-signature")
     endpoint_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
-    event = None
+
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, endpoint_secret
         )
+        print("✅ EVENT:", event["type"])
     except Exception as e:
-        print(f"Webhook error: {e}")
+        print("❌ SIGNATURE ERROR:", str(e))
         return "", 400
 
-    if event["type"] == "checkout.session.completed":
-        session_obj = event["data"]["object"]
-        email = session_obj.get("customer_email")
-        if email:
-            set_user_premium_by_email(email)
-            print(f"✅ User {email} upgraded to premium.")
-    return "", 200
+    try:
+        if event["type"] == "checkout.session.completed":
+            session_obj = event["data"]["object"]
 
+            print("🔥 FULL SESSION:", session_obj)
+
+            # ✅ SAFE email extraction
+            email = session_obj.get("customer_email")
+
+            if not email:
+                email = session_obj.get("metadata", {}).get("user_email")
+
+            print("📧 EMAIL:", email)
+
+            if email:
+                try:
+                    set_user_premium_by_email(email)
+                    print(f"✅ User {email} upgraded")
+                except Exception as db_error:
+                    print("❌ DB ERROR:", str(db_error))
+            else:
+                print("❌ EMAIL NOT FOUND")
+
+    except Exception as e:
+        print("❌ WEBHOOK ERROR:", str(e))
+        return "", 500
+
+    return "", 200
 
 @app.route("/pricing", methods=["GET", "POST"])
 def pricing():
