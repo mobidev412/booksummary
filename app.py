@@ -403,6 +403,17 @@ def books():
             author = request.form.get("author", "").strip()
             query  = f"{title} {author}".strip()
             track_book_searched(session["user_id"], query)
+
+            if not session.get("is_premium"):
+                cursor2 = get_cursor(get_connection())
+                cursor2.execute(
+                    "SELECT COUNT(*) FROM chat_history WHERE user_id = %s",
+                    (session["user_id"],)
+                )
+                if cursor2.fetchone()["count"] >= 1:
+                    flash("You've used your free summary. Upgrade to generate unlimited summaries.", "error")
+                    return redirect(url_for("pricing"))
+
             book = search_book(query)
             if book:
                 # Save book data and redirect to summary directly
@@ -495,10 +506,10 @@ def select_book():
         conn = get_connection()
         cursor = get_cursor(conn)
         cursor.execute(
-            "SELECT COUNT(*) FROM summaries WHERE user_id = %s",
+            "SELECT COUNT(*) FROM chat_history WHERE user_id = %s",
             (session["user_id"],)
         )
-        count = cursor.fetchone()[0]
+        count = cursor.fetchone()["count"]
         conn.close()
 
         if count >= 1:
